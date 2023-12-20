@@ -1,6 +1,5 @@
 import * as core from '@actions/core';
 
-
 import os from 'os';
 
 import * as auth from './authutil';

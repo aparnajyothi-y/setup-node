@@ -17,8 +17,8 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
   try {
     const manifest = JSON.parse(contents);
 
-     // Presume package.json file.
-     if (typeof manifest === 'object' && manifest !== null) {
+    // Presume package.json file.
+    if (typeof manifest === 'object' && manifest !== null) {
       // Support Volta.
       // See https://docs.volta.sh/guide/understanding#managing-your-project
       if (manifest.volta?.node) {
@@ -29,7 +29,7 @@ export function getNodeVersionFromFile(versionFilePath: string): string | null {
         return manifest.engines.node;
       }
 
-       // Support Volta workspaces.
+      // Support Volta workspaces.
       // See https://docs.volta.sh/advanced/workspaces
       if (manifest.volta?.extends) {
         const extendedFilePath = path.resolve(

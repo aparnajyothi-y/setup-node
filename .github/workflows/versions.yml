@@ -179,8 +179,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Setup node from node version file
         uses: ./
-        with:  
-       node-version-file: '__tests__/data/package-volta.json'
+        with:
+          node-version-file: '__tests__/data/package-volta.json'
       - name: Verify node
         run: __tests__/verify-node.sh 16
 

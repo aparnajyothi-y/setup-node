@@ -60,8 +60,6 @@ describe('main tests', () => {
 
     isCacheActionAvailable = jest.spyOn(cache, 'isFeatureAvailable');
 
-   
-
     cnSpy = jest.spyOn(process.stdout, 'write');
     cnSpy.mockImplementation(line => {
       // uncomment to debug
@@ -185,7 +183,7 @@ describe('main tests', () => {
 
     it('does not read node-version-file if node-version-file is not provided', async () => {
       // Arrange
-      
+
       delete inputs['node-version-file'];
 
       // Act
@@ -197,9 +195,8 @@ describe('main tests', () => {
 
     it('reads node-version-file', async () => {
       // Arrange
-      
+
       const expectedVersionSpec = '14';
-     
 
       getNodeVersionFromFileSpy.mockImplementation(() => expectedVersionSpec);
       // Act
