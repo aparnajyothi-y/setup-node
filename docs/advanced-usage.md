@@ -83,6 +83,7 @@ When using the `package.json` input, the action will look for `volta.node` first
   }
 }
 ```
+Otherwise, when [`volta.extends`](https://docs.volta.sh/advanced/workspaces) is defined, then it will resolve the corresponding file and look for `volta.node` or `engines.node` recursively.
 
 ## Architecture
 

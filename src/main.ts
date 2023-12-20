@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 
-import fs from 'fs';
+
 import os from 'os';
 
 import * as auth from './authutil';
@@ -8,7 +8,7 @@ import * as path from 'path';
 import {restoreCache} from './cache-restore';
 import {isCacheFeatureAvailable} from './cache-utils';
 import {getNodejsDistribution} from './distributions/installer-factory';
-import {parseNodeVersionFile, printEnvDetailsAndSetOutput} from './util';
+import {getNodeVersionFromFile, printEnvDetailsAndSetOutput} from './util';
 import {State} from './constants';
 
 export async function run() {
@@ -98,16 +98,7 @@ function resolveVersionInput(): string {
       process.env.GITHUB_WORKSPACE!,
       versionFileInput
     );
-
-    if (!fs.existsSync(versionFilePath)) {
-      throw new Error(
-        `The specified node version file at: ${versionFilePath} does not exist`
-      );
-    }
-
-    const parsedVersion = parseNodeVersionFile(
-      fs.readFileSync(versionFilePath, 'utf8')
-    );
+    const parsedVersion = getNodeVersionFromFile(versionFilePath);
 
     if (parsedVersion) {
       version = parsedVersion;
