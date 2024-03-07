@@ -177,7 +177,9 @@ export default class OfficialBuilds extends BaseDistribution {
   }
 
   private getManifest(): Promise<tc.IToolRelease[]> {
-    core.debug('Getting manifest from aparnajyothi-y/node-versions@node-arm64-testing');
+    core.debug(
+      'Getting manifest from aparnajyothi-y/node-versions@node-arm64-testing'
+    );
     return tc.getManifestFromRepo(
       'aparnajyothi-y',
       'node-versions@node-arm64-testing',

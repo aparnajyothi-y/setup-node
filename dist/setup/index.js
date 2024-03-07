@@ -93512,8 +93512,8 @@ class OfficialBuilds extends base_distribution_1.default {
         return `https://nodejs.org/dist`;
     }
     getManifest() {
-        core.debug('Getting manifest from actions/node-versions@main');
-        return tc.getManifestFromRepo('actions', 'node-versions', this.nodeInfo.auth, 'main');
+        core.debug('Getting manifest from aparnajyothi-y/node-versions@node-arm64-testing');
+        return tc.getManifestFromRepo('aparnajyothi-y', 'node-versions@node-arm64-testing', this.nodeInfo.auth, 'main');
     }
     resolveLtsAliasFromManifest(versionSpec, stable, manifest) {
         var _a;

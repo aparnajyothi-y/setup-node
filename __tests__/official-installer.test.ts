@@ -157,8 +157,8 @@ describe('setup-node', () => {
       os.platform = platform;
       os.arch = 'x64';
       const versions: tc.IToolRelease[] | null = await tc.getManifestFromRepo(
-        'actions',
-        'node-versions',
+        'aparnajyothi-y',
+        'node-versions@node-arm64-testing',
         'mocktoken'
       );
       expect(versions).toBeDefined();
@@ -453,7 +453,7 @@ describe('setup-node', () => {
       );
       expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).not.toHaveBeenCalledWith(
-        'Getting manifest from actions/node-versions@main'
+        'Getting manifest from aparnajyothi-y/node-versions@node-arm64-testing'
       );
     });
 
@@ -477,7 +477,7 @@ describe('setup-node', () => {
       );
       expect(dbgSpy).toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
-        'Getting manifest from actions/node-versions@main'
+        'Getting manifest from aparnajyothi-y/node-versions@node-arm64-testing'
       );
       expect(logSpy).toHaveBeenCalledWith("Resolved as '12.16.2'");
       expect(logSpy).toHaveBeenCalledWith(`Found in cache @ ${toolPath}`);
@@ -505,7 +505,7 @@ describe('setup-node', () => {
       );
       expect(dbgSpy).toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
-        'Getting manifest from actions/node-versions@main'
+        'Getting manifest from aparnajyothi-y/node-versions@node-arm64-testing'
       );
       expect(logSpy).toHaveBeenCalledWith("Resolved as '12.16.2'");
       expect(logSpy).toHaveBeenCalledWith(
@@ -545,7 +545,7 @@ describe('setup-node', () => {
       );
       expect(dbgSpy).toHaveBeenCalledWith('No manifest cached');
       expect(dbgSpy).toHaveBeenCalledWith(
-        'Getting manifest from actions/node-versions@main'
+        'Getting manifest from aparnajyothi-y/node-versions@node-arm64-testing'
       );
       expect(logSpy).toHaveBeenCalledWith(
         `Failed to resolve version ${versionSpec} from manifest`
@@ -629,7 +629,7 @@ describe('setup-node', () => {
           'Attempt to resolve LTS alias from manifest...'
         );
         expect(dbgSpy).toHaveBeenCalledWith(
-          'Getting manifest from actions/node-versions@main'
+          'Getting manifest from aparnajyothi-y/node-versions@node-arm64-testing'
         );
         expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
         expect(dbgSpy).toHaveBeenCalledWith(
@@ -682,7 +682,7 @@ describe('setup-node', () => {
           'Attempt to resolve LTS alias from manifest...'
         );
         expect(dbgSpy).toHaveBeenCalledWith(
-          'Getting manifest from actions/node-versions@main'
+          'Getting manifest from aparnajyothi-y/node-versions@node-arm64-testing'
         );
         expect(dbgSpy).not.toHaveBeenCalledWith('No manifest cached');
         expect(dbgSpy).toHaveBeenCalledWith(
@@ -719,7 +719,7 @@ describe('setup-node', () => {
         'Attempt to resolve LTS alias from manifest...'
       );
       expect(dbgSpy).toHaveBeenCalledWith(
-        'Getting manifest from actions/node-versions@main'
+        'Getting manifest from aparnajyothi-y/node-versions@node-arm64-testing'
       );
       expect(cnSpy).toHaveBeenCalledWith(
         `::error::Unable to parse LTS alias for Node version 'lts/'${osm.EOL}`
@@ -740,7 +740,7 @@ describe('setup-node', () => {
         'Attempt to resolve LTS alias from manifest...'
       );
       expect(dbgSpy).toHaveBeenCalledWith(
-        'Getting manifest from actions/node-versions@main'
+        'Getting manifest from aparnajyothi-y/node-versions@node-arm64-testing'
       );
       expect(dbgSpy).toHaveBeenCalledWith(
         `LTS alias 'unknown' for Node version 'lts/unknown'`
@@ -768,7 +768,7 @@ describe('setup-node', () => {
         'Attempt to resolve LTS alias from manifest...'
       );
       expect(dbgSpy).toHaveBeenCalledWith(
-        'Getting manifest from actions/node-versions@main'
+        'Getting manifest from aparnajyothi-y/node-versions@node-arm64-testing'
       );
       expect(cnSpy).toHaveBeenCalledWith(
         `::error::Unable to download manifest${osm.EOL}`
