@@ -21,6 +21,8 @@ export const restoreCache = async (
     throw new Error(`Caching for '${packageManager}' is not supported`);
   }
   const platform = process.env.RUNNER_OS;
+  const platform = os.platform();
+  const arch = os.arch();
 
   const cachePaths = await getCacheDirectories(
     packageManagerInfo,
@@ -38,7 +40,7 @@ export const restoreCache = async (
     );
   }
 
-  const keyPrefix = `node-cache-${platform}-${packageManager}`;
+  const keyPrefix = `node-cache-${platform}-${arch}-${packageManager}`;
   const primaryKey = `${keyPrefix}-${fileHash}`;
   core.debug(`primary key is ${primaryKey}`);
 
