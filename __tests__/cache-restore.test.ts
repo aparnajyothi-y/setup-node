@@ -2,16 +2,13 @@ import * as core from '@actions/core';
 import * as cache from '@actions/cache';
 import * as path from 'path';
 import * as glob from '@actions/glob';
+import osm from 'os';
 
 import * as utils from '../src/cache-utils';
 import {restoreCache} from '../src/cache-restore';
 
 describe('cache-restore', () => {
   process.env['GITHUB_WORKSPACE'] = path.join(__dirname, 'data');
-  if (!process.env.RUNNER_OS) {
-    process.env.RUNNER_OS = 'Linux';
-  }
-  const platform = process.env.RUNNER_OS;
   const platform = 'Linux';
   const arch = 'arm64';
   const commonPath = '/some/random/path';
@@ -107,7 +104,6 @@ describe('cache-restore', () => {
     // cache-utils
     getCommandOutputSpy = jest.spyOn(utils, 'getCommandOutput');
 
-    
     // os
     archSpy = jest.spyOn(osm, 'arch');
     archSpy.mockImplementation(() => arch);

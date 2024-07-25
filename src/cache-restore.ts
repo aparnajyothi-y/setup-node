@@ -3,6 +3,7 @@ import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 
 import {State} from './constants';
 import {
@@ -20,7 +21,6 @@ export const restoreCache = async (
   if (!packageManagerInfo) {
     throw new Error(`Caching for '${packageManager}' is not supported`);
   }
-  const platform = process.env.RUNNER_OS;
   const platform = os.platform();
   const arch = os.arch();
 
