@@ -93313,6 +93313,8 @@ const restoreCache = (packageManager, cacheDependencyPath) => __awaiter(void 0, 
     }
     const platform = os_1.default.platform();
     const arch = os_1.default.arch();
+    core.info(`Platform: ${platform}`);
+    core.info(`Architecture: ${arch}`);
     const cachePaths = yield (0, cache_utils_1.getCacheDirectories)(packageManagerInfo, cacheDependencyPath);
     core.saveState(constants_1.State.CachePaths, cachePaths);
     const lockFilePath = cacheDependencyPath

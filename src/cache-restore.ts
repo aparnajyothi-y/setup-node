@@ -24,6 +24,9 @@ export const restoreCache = async (
   const platform = os.platform();
   const arch = os.arch();
 
+  core.info(`Platform: ${platform}`);
+  core.info(`Architecture: ${arch}`);
+
   const cachePaths = await getCacheDirectories(
     packageManagerInfo,
     cacheDependencyPath
