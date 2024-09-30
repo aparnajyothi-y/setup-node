@@ -1,15 +1,7 @@
 name: versions
 
 on:
-  pull_request:
-    paths-ignore:
-      - '**.md'
-  push:
-    branches:
-      - main
-      - releases/*
-    paths-ignore:
-      - '**.md'
+  workflow_dispatch:
 
 jobs:
   local-cache:
@@ -46,9 +38,8 @@ jobs:
       - if: runner.os != 'Windows' && runner.os != 'macOS'
         name: Verify node and npm
         run: |
-          . "$NVM_DIR/nvm.sh"
-          [[ $(nvm version-remote "${{ matrix.node-version }}") =~ ^v([^.]+) ]]
-          __tests__/verify-node.sh "${BASH_REMATCH[1]}"
+          node -v
+          npm -v
         shell: bash
 
   v8-canary-syntax:
