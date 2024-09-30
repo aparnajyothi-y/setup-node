@@ -1,7 +1,9 @@
 name: versions
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - nvm-failure-fix
 
 jobs:
   local-cache:
