@@ -40,11 +40,11 @@ export default abstract class BaseDistribution {
 
     // If mirrorURL is provided, skip the cache and directly download from the mirror
     if (this.mirrorURL) {
-      core.info(`Using mirror URL: ${this.mirrorURL}`);
+      core.info(`Using mirror URL: ${this.mirrorURL} to download Node.js.`);
       const evaluatedVersion = await this.findVersionInDist(nodeJsVersions);
-      const toolInfo = this.getNodejsDistInfo(evaluatedVersion);
-      toolPath = await this.downloadNodejsFromMirror(toolInfo);
-    } else {
+      const toolName = this.getNodejsDistInfo(evaluatedVersion);
+      toolPath = await this.downloadNodejs(toolName);
+    }else {
       // If no mirrorURL, use cache and fallback to the default behavior
       toolPath = this.findVersionInHostedToolCacheDirectory();
       if (toolPath) {
