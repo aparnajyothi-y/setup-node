@@ -33,6 +33,8 @@ export async function run() {
       arch = os.arch();
     }
 
+    const mirrorURL = core.getInput('mirrorURL'); // This will be passed to the installer
+
     if (version) {
       const token = core.getInput('token');
       const auth = !token ? undefined : `token ${token}`;
@@ -45,7 +47,9 @@ export async function run() {
         checkLatest,
         auth,
         stable,
-        arch
+        arch,
+        mirrorURL  // Pass the mirrorURL here
+
       };
       const nodeDistribution = getNodejsDistribution(nodejsInfo);
       await nodeDistribution.setupNodeJs();

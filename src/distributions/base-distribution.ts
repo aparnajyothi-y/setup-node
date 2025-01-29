@@ -16,12 +16,15 @@ import {NodeInputs, INodeVersion, INodeVersionInfo} from './base-models';
 export default abstract class BaseDistribution {
   protected httpClient: hc.HttpClient;
   protected osPlat = os.platform();
+  protected mirrorURL: string | undefined;
 
-  constructor(protected nodeInfo: NodeInputs) {
+  constructor(protected nodeInfo: NodeInputs, mirrorURL?: string) {
     this.httpClient = new hc.HttpClient('setup-node', [], {
       allowRetries: true,
       maxRetries: 3
     });
+   // If mirrorURL is provided, set it; otherwise, it'll default to undefined
+    this.mirrorURL = mirrorURL;
   }
 
   protected abstract getDistributionUrl(): string;
@@ -134,7 +137,12 @@ export default abstract class BaseDistribution {
       `Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`
     );
     try {
-      downloadPath = await tc.downloadTool(info.downloadUrl);
+      // Use the mirror URL if provided, otherwise fall back to default behavior
+      const downloadUrl = this.mirrorURL
+        ? `${this.mirrorURL}/v${info.resolvedVersion}/${info.fileName}`
+        : info.downloadUrl;
+
+      downloadPath = await tc.downloadTool(downloadUrl);
     } catch (err) {
       if (
         err instanceof tc.HTTPError &&

@@ -4,6 +4,7 @@ export interface NodeInputs {
   auth?: string;
   checkLatest: boolean;
   stable: boolean;
+  mirrorURL?: string;  // Add the mirrorURL property
 }
 
 export interface INodeVersionInfo {

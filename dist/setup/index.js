@@ -100081,13 +100081,15 @@ const path = __importStar(__nccwpck_require__(1017));
 const os_1 = __importDefault(__nccwpck_require__(2037));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 class BaseDistribution {
-    constructor(nodeInfo) {
+    constructor(nodeInfo, mirrorURL) {
         this.nodeInfo = nodeInfo;
         this.osPlat = os_1.default.platform();
         this.httpClient = new hc.HttpClient('setup-node', [], {
             allowRetries: true,
             maxRetries: 3
         });
+        // If mirrorURL is provided, set it; otherwise, it'll default to undefined
+        this.mirrorURL = mirrorURL;
     }
     setupNodeJs() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -100179,7 +100181,11 @@ class BaseDistribution {
             let downloadPath = '';
             core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from ${info.downloadUrl}`);
             try {
-                downloadPath = yield tc.downloadTool(info.downloadUrl);
+                // Use the mirror URL if provided, otherwise fall back to default behavior
+                const downloadUrl = this.mirrorURL
+                    ? `${this.mirrorURL}/v${info.resolvedVersion}/${info.fileName}`
+                    : info.downloadUrl;
+                downloadPath = yield tc.downloadTool(downloadUrl);
             }
             catch (err) {
                 if (err instanceof tc.HTTPError &&
@@ -100748,6 +100754,7 @@ function run() {
             if (!arch) {
                 arch = os_1.default.arch();
             }
+            const mirrorURL = core.getInput('mirrorURL'); // This will be passed to the installer
             if (version) {
                 const token = core.getInput('token');
                 const auth = !token ? undefined : `token ${token}`;
@@ -100758,7 +100765,8 @@ function run() {
                     checkLatest,
                     auth,
                     stable,
-                    arch
+                    arch,
+                    mirrorURL // Pass the mirrorURL here
                 };
                 const nodeDistribution = (0, installer_factory_1.getNodejsDistribution)(nodejsInfo);
                 yield nodeDistribution.setupNodeJs();
