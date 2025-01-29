@@ -100473,8 +100473,8 @@ const tc = __importStar(__nccwpck_require__(7784));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const base_distribution_1 = __importDefault(__nccwpck_require__(7));
 class OfficialBuilds extends base_distribution_1.default {
-    constructor(nodeInfo) {
-        super(nodeInfo);
+    constructor(nodeInfo, mirrorURL) {
+        super(nodeInfo, mirrorURL); // Pass mirrorURL to the base class
     }
     setupNodeJs() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -100484,7 +100484,6 @@ class OfficialBuilds extends base_distribution_1.default {
             const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
             if (this.isLtsAlias(this.nodeInfo.versionSpec)) {
                 core.info('Attempt to resolve LTS alias from manifest...');
-                // No try-catch since it's not possible to resolve LTS alias without manifest
                 manifest = yield this.getManifest();
                 this.nodeInfo.versionSpec = this.resolveLtsAliasFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, manifest);
             }
@@ -100505,6 +100504,7 @@ class OfficialBuilds extends base_distribution_1.default {
                     core.info(`Failed to resolve version ${this.nodeInfo.versionSpec} from manifest`);
                 }
             }
+            // Check the hosted tool cache first
             let toolPath = this.findVersionInHostedToolCacheDirectory();
             if (toolPath) {
                 core.info(`Found in cache @ ${toolPath}`);
@@ -100516,8 +100516,12 @@ class OfficialBuilds extends base_distribution_1.default {
                 core.info(`Attempting to download ${this.nodeInfo.versionSpec}...`);
                 const versionInfo = yield this.getInfoFromManifest(this.nodeInfo.versionSpec, this.nodeInfo.stable, osArch, manifest);
                 if (versionInfo) {
-                    core.info(`Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${versionInfo.downloadUrl}`);
-                    downloadPath = yield tc.downloadTool(versionInfo.downloadUrl, undefined, this.nodeInfo.auth);
+                    // If versionInfo is found in the manifest, use the mirror URL if provided
+                    const downloadUrl = this.mirrorURL
+                        ? `${this.mirrorURL}/v${versionInfo.resolvedVersion}/${versionInfo.fileName}`
+                        : versionInfo.downloadUrl;
+                    core.info(`Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${downloadUrl}`);
+                    downloadPath = yield tc.downloadTool(downloadUrl, undefined, this.nodeInfo.auth);
                     if (downloadPath) {
                         toolPath = yield this.extractArchive(downloadPath, versionInfo, false);
                     }
@@ -100527,7 +100531,6 @@ class OfficialBuilds extends base_distribution_1.default {
                 }
             }
             catch (err) {
-                // Rate limit?
                 if (err instanceof tc.HTTPError &&
                     (err.httpStatusCode === 403 || err.httpStatusCode === 429)) {
                     core.info(`Received HTTP status code ${err.httpStatusCode}. This usually indicates the rate limit has been exceeded`);
@@ -100538,6 +100541,7 @@ class OfficialBuilds extends base_distribution_1.default {
                 core.debug((_a = err.stack) !== null && _a !== void 0 ? _a : 'empty stack');
                 core.info('Falling back to download directly from Node');
             }
+            // If toolPath was not found in cache or download from manifest fails, fall back to official Node.js distribution
             if (!toolPath) {
                 toolPath = yield this.downloadDirectlyFromNode();
             }
@@ -100563,6 +100567,10 @@ class OfficialBuilds extends base_distribution_1.default {
             }
             const toolName = this.getNodejsDistInfo(evaluatedVersion);
             try {
+                // Use the mirror URL if provided, otherwise fall back to default behavior
+                const downloadUrl = this.mirrorURL
+                    ? `${this.mirrorURL}/v${toolName.resolvedVersion}/${toolName.fileName}`
+                    : toolName.downloadUrl;
                 const toolPath = yield this.downloadNodejs(toolName);
                 return toolPath;
             }
@@ -100586,7 +100594,7 @@ class OfficialBuilds extends base_distribution_1.default {
         return version;
     }
     getDistributionUrl() {
-        return `https://nodejs.org/dist`;
+        return this.mirrorURL || 'https://nodejs.org/dist'; // Default to official Node.js distribution
     }
     getManifest() {
         core.debug('Getting manifest from actions/node-versions@main');

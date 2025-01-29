@@ -1,17 +1,16 @@
 import * as core from '@actions/core';
 import * as tc from '@actions/tool-cache';
 import path from 'path';
-
 import BaseDistribution from '../base-distribution';
-import {NodeInputs, INodeVersion, INodeVersionInfo} from '../base-models';
+import { NodeInputs, INodeVersion, INodeVersionInfo } from '../base-models';
 
 interface INodeRelease extends tc.IToolRelease {
   lts?: string;
 }
 
 export default class OfficialBuilds extends BaseDistribution {
-  constructor(nodeInfo: NodeInputs) {
-    super(nodeInfo);
+  constructor(nodeInfo: NodeInputs, mirrorURL?: string) {
+    super(nodeInfo, mirrorURL); // Pass mirrorURL to the base class
   }
 
   public async setupNodeJs() {
@@ -21,10 +20,7 @@ export default class OfficialBuilds extends BaseDistribution {
 
     if (this.isLtsAlias(this.nodeInfo.versionSpec)) {
       core.info('Attempt to resolve LTS alias from manifest...');
-
-      // No try-catch since it's not possible to resolve LTS alias without manifest
       manifest = await this.getManifest();
-
       this.nodeInfo.versionSpec = this.resolveLtsAliasFromManifest(
         this.nodeInfo.versionSpec,
         this.nodeInfo.stable,
@@ -58,6 +54,7 @@ export default class OfficialBuilds extends BaseDistribution {
       }
     }
 
+    // Check the hosted tool cache first
     let toolPath = this.findVersionInHostedToolCacheDirectory();
 
     if (toolPath) {
@@ -78,21 +75,19 @@ export default class OfficialBuilds extends BaseDistribution {
       );
 
       if (versionInfo) {
+        // If versionInfo is found in the manifest, use the mirror URL if provided
+        const downloadUrl = this.mirrorURL
+          ? `${this.mirrorURL}/v${versionInfo.resolvedVersion}/${versionInfo.fileName}`
+          : versionInfo.downloadUrl;
+
         core.info(
-          `Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${versionInfo.downloadUrl}`
-        );
-        downloadPath = await tc.downloadTool(
-          versionInfo.downloadUrl,
-          undefined,
-          this.nodeInfo.auth
+          `Acquiring ${versionInfo.resolvedVersion} - ${versionInfo.arch} from ${downloadUrl}`
         );
 
+        downloadPath = await tc.downloadTool(downloadUrl, undefined, this.nodeInfo.auth);
+
         if (downloadPath) {
-          toolPath = await this.extractArchive(
-            downloadPath,
-            versionInfo,
-            false
-          );
+          toolPath = await this.extractArchive(downloadPath, versionInfo, false);
         }
       } else {
         core.info(
@@ -100,7 +95,6 @@ export default class OfficialBuilds extends BaseDistribution {
         );
       }
     } catch (err) {
-      // Rate limit?
       if (
         err instanceof tc.HTTPError &&
         (err.httpStatusCode === 403 || err.httpStatusCode === 429)
@@ -115,6 +109,7 @@ export default class OfficialBuilds extends BaseDistribution {
       core.info('Falling back to download directly from Node');
     }
 
+    // If toolPath was not found in cache or download from manifest fails, fall back to official Node.js distribution
     if (!toolPath) {
       toolPath = await this.downloadDirectlyFromNode();
     }
@@ -148,6 +143,11 @@ export default class OfficialBuilds extends BaseDistribution {
     const toolName = this.getNodejsDistInfo(evaluatedVersion);
 
     try {
+      // Use the mirror URL if provided, otherwise fall back to default behavior
+      const downloadUrl = this.mirrorURL
+        ? `${this.mirrorURL}/v${toolName.resolvedVersion}/${toolName.fileName}`
+        : toolName.downloadUrl;
+
       const toolPath = await this.downloadNodejs(toolName);
       return toolPath;
     } catch (error) {
@@ -177,7 +177,7 @@ export default class OfficialBuilds extends BaseDistribution {
   }
 
   protected getDistributionUrl(): string {
-    return `https://nodejs.org/dist`;
+    return this.mirrorURL || 'https://nodejs.org/dist'; // Default to official Node.js distribution
   }
 
   private getManifest(): Promise<tc.IToolRelease[]> {
