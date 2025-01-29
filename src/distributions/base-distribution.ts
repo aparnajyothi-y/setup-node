@@ -40,11 +40,11 @@ export default abstract class BaseDistribution {
 
     // If mirrorURL is provided, skip the cache and directly download from the mirror
     if (this.mirrorURL) {
-      core.info(`Using mirror URL: ${this.mirrorURL} to download Node.js.`);
+      core.info(`Using mirror URL: ${this.mirrorURL}`);
       const evaluatedVersion = await this.findVersionInDist(nodeJsVersions);
       const toolName = this.getNodejsDistInfo(evaluatedVersion);
-      toolPath = await this.downloadNodejs(toolName);
-    }else {
+      toolPath = await this.downloadNodejsFromMirror(toolName);
+    } else {
       // If no mirrorURL, use cache and fallback to the default behavior
       toolPath = this.findVersionInHostedToolCacheDirectory();
       if (toolPath) {
@@ -145,21 +145,24 @@ export default abstract class BaseDistribution {
   protected async downloadNodejsFromMirror(info: INodeVersionInfo) {
     let downloadPath = '';
     const downloadUrl = `${this.mirrorURL}/v${info.resolvedVersion}/${info.fileName}`;
-    core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from mirror URL: ${downloadUrl}`);
     
+    // Log that we're downloading from the mirror URL
+    core.info(`Downloading Node.js version ${info.resolvedVersion} from mirror URL: ${downloadUrl}`);
+  
     try {
       downloadPath = await tc.downloadTool(downloadUrl);
     } catch (err: unknown) {
       if (err instanceof Error) {
-      throw new Error(`Failed to download Node.js from mirror URL: ${downloadUrl}, error: ${err.message}`);
-    } else {
-      // If the error is not an instance of Error, you may want to handle it differently
-      console.error('An unknown error occurred');
+        throw new Error(`Failed to download Node.js from mirror URL: ${downloadUrl}, error: ${err.message}`);
+      } else {
+        core.error('An unknown error occurred');
+        throw new Error(`Failed to download Node.js from mirror URL: ${downloadUrl}`);
+      }
     }
-  }
+    
     const toolPath = await this.extractArchive(downloadPath, info, true);
-    core.info('Done');
-
+    core.info('Download and extraction complete.');
+  
     return toolPath;
   }
 

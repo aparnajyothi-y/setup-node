@@ -100101,10 +100101,10 @@ class BaseDistribution {
             let toolPath;
             // If mirrorURL is provided, skip the cache and directly download from the mirror
             if (this.mirrorURL) {
-                core.info(`Using mirror URL: ${this.mirrorURL} to download Node.js.`);
+                core.info(`Using mirror URL: ${this.mirrorURL}`);
                 const evaluatedVersion = yield this.findVersionInDist(nodeJsVersions);
                 const toolName = this.getNodejsDistInfo(evaluatedVersion);
-                toolPath = yield this.downloadNodejs(toolName);
+                toolPath = yield this.downloadNodejsFromMirror(toolName);
             }
             else {
                 // If no mirrorURL, use cache and fallback to the default behavior
@@ -100191,7 +100191,8 @@ class BaseDistribution {
         return __awaiter(this, void 0, void 0, function* () {
             let downloadPath = '';
             const downloadUrl = `${this.mirrorURL}/v${info.resolvedVersion}/${info.fileName}`;
-            core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from mirror URL: ${downloadUrl}`);
+            // Log that we're downloading from the mirror URL
+            core.info(`Downloading Node.js version ${info.resolvedVersion} from mirror URL: ${downloadUrl}`);
             try {
                 downloadPath = yield tc.downloadTool(downloadUrl);
             }
@@ -100200,12 +100201,12 @@ class BaseDistribution {
                     throw new Error(`Failed to download Node.js from mirror URL: ${downloadUrl}, error: ${err.message}`);
                 }
                 else {
-                    // If the error is not an instance of Error, you may want to handle it differently
-                    console.error('An unknown error occurred');
+                    core.error('An unknown error occurred');
+                    throw new Error(`Failed to download Node.js from mirror URL: ${downloadUrl}`);
                 }
             }
             const toolPath = yield this.extractArchive(downloadPath, info, true);
-            core.info('Done');
+            core.info('Download and extraction complete.');
             return toolPath;
         });
     }
