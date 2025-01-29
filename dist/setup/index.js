@@ -100150,7 +100150,7 @@ class BaseDistribution {
     }
     getNodeJsVersions() {
         return __awaiter(this, void 0, void 0, function* () {
-            const initialUrl = this.getDistributionUrl();
+            const initialUrl = this.mirrorURL || this.getDistributionUrl();
             const dataUrl = `${initialUrl}/index.json`;
             const response = yield this.httpClient.getJson(dataUrl);
             return response.result || [];

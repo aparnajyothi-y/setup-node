@@ -100,7 +100,7 @@ export default abstract class BaseDistribution {
   }
 
   protected async getNodeJsVersions(): Promise<INodeVersion[]> {
-    const initialUrl = this.getDistributionUrl();
+    const initialUrl = this.mirrorURL || this.getDistributionUrl();
     const dataUrl = `${initialUrl}/index.json`;
 
     const response = await this.httpClient.getJson<INodeVersion[]>(dataUrl);
