@@ -100098,16 +100098,27 @@ class BaseDistribution {
                 const evaluatedVersion = yield this.findVersionInDist(nodeJsVersions);
                 this.nodeInfo.versionSpec = evaluatedVersion;
             }
-            let toolPath = this.findVersionInHostedToolCacheDirectory();
-            if (toolPath) {
-                core.info(`Found in cache @ ${toolPath}`);
+            let toolPath;
+            // If mirrorURL is provided, skip the cache and directly download from the mirror
+            if (this.mirrorURL) {
+                core.info(`Using mirror URL: ${this.mirrorURL}`);
+                const evaluatedVersion = yield this.findVersionInDist(nodeJsVersions);
+                const toolInfo = this.getNodejsDistInfo(evaluatedVersion);
+                toolPath = yield this.downloadNodejsFromMirror(toolInfo);
             }
             else {
-                const evaluatedVersion = yield this.findVersionInDist(nodeJsVersions);
-                const toolName = this.getNodejsDistInfo(evaluatedVersion);
-                toolPath = yield this.downloadNodejs(toolName);
+                // If no mirrorURL, use cache and fallback to the default behavior
+                toolPath = this.findVersionInHostedToolCacheDirectory();
+                if (toolPath) {
+                    core.info(`Found in cache @ ${toolPath}`);
+                }
+                else {
+                    const evaluatedVersion = yield this.findVersionInDist(nodeJsVersions);
+                    const toolInfo = this.getNodejsDistInfo(evaluatedVersion);
+                    toolPath = yield this.downloadNodejs(toolInfo);
+                }
             }
-            if (this.osPlat != 'win32') {
+            if (this.osPlat !== 'win32') {
                 toolPath = path.join(toolPath, 'bin');
             }
             core.addPath(toolPath);
@@ -100159,10 +100170,10 @@ class BaseDistribution {
     getNodejsDistInfo(version) {
         const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
         version = semver_1.default.clean(version) || '';
-        const fileName = this.osPlat == 'win32'
+        const fileName = this.osPlat === 'win32'
             ? `node-v${version}-win-${osArch}`
             : `node-v${version}-${this.osPlat}-${osArch}`;
-        const urlFileName = this.osPlat == 'win32'
+        const urlFileName = this.osPlat === 'win32'
             ? this.nodeInfo.arch === 'arm64'
                 ? `${fileName}.zip`
                 : `${fileName}.7z`
@@ -100175,6 +100186,28 @@ class BaseDistribution {
             arch: osArch,
             fileName: fileName
         };
+    }
+    downloadNodejsFromMirror(info) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let downloadPath = '';
+            const downloadUrl = `${this.mirrorURL}/v${info.resolvedVersion}/${info.fileName}`;
+            core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from mirror URL: ${downloadUrl}`);
+            try {
+                downloadPath = yield tc.downloadTool(downloadUrl);
+            }
+            catch (err) {
+                if (err instanceof Error) {
+                    throw new Error(`Failed to download Node.js from mirror URL: ${downloadUrl}, error: ${err.message}`);
+                }
+                else {
+                    // If the error is not an instance of Error, you may want to handle it differently
+                    console.error('An unknown error occurred');
+                }
+            }
+            const toolPath = yield this.extractArchive(downloadPath, info, true);
+            core.info('Done');
+            return toolPath;
+        });
     }
     downloadNodejs(info) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -100247,19 +100280,11 @@ class BaseDistribution {
     }
     extractArchive(downloadPath, info, isOfficialArchive) {
         return __awaiter(this, void 0, void 0, function* () {
-            //
-            // Extract
-            //
             core.info('Extracting ...');
             let extPath;
             info = info || {}; // satisfy compiler, never null when reaches here
             if (this.osPlat == 'win32') {
                 const extension = this.nodeInfo.arch === 'arm64' ? '.zip' : '.7z';
-                // Rename archive to add extension because after downloading
-                // archive does not contain extension type and it leads to some issues
-                // on Windows runners without PowerShell Core.
-                //
-                // For default PowerShell Windows it should contain extension type to unpack it.
                 if (extension === '.zip' && isOfficialArchive) {
                     const renamedArchive = `${downloadPath}.zip`;
                     fs_1.default.renameSync(downloadPath, renamedArchive);
@@ -100269,7 +100294,6 @@ class BaseDistribution {
                     const _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
                     extPath = yield tc.extract7z(downloadPath, undefined, _7zPath);
                 }
-                // 7z extracts to folder matching file name
                 const nestedPath = path.join(extPath, path.basename(info.fileName, extension));
                 if (fs_1.default.existsSync(nestedPath)) {
                     extPath = nestedPath;
@@ -100282,9 +100306,6 @@ class BaseDistribution {
                     '1'
                 ]);
             }
-            //
-            // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
-            //
             core.info('Adding to the cache ...');
             const toolPath = yield tc.cacheDir(extPath, 'node', info.resolvedVersion, info.arch);
             return toolPath;
@@ -100292,7 +100313,6 @@ class BaseDistribution {
     }
     getDistFileName() {
         const osArch = this.translateArchToDistUrl(this.nodeInfo.arch);
-        // node offers a json list of versions
         let dataFileName;
         switch (this.osPlat) {
             case 'linux':

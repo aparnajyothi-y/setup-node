@@ -1,4 +1,4 @@
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import * as tc from '@actions/tool-cache';
 import * as hc from '@actions/http-client';
 import * as core from '@actions/core';
@@ -11,7 +11,7 @@ import * as path from 'path';
 import os from 'os';
 import fs from 'fs';
 
-import {NodeInputs, INodeVersion, INodeVersionInfo} from './base-models';
+import { NodeInputs, INodeVersion, INodeVersionInfo } from './base-models';
 
 export default abstract class BaseDistribution {
   protected httpClient: hc.HttpClient;
@@ -23,7 +23,7 @@ export default abstract class BaseDistribution {
       allowRetries: true,
       maxRetries: 3
     });
-   // If mirrorURL is provided, set it; otherwise, it'll default to undefined
+    // If mirrorURL is provided, set it; otherwise, it'll default to undefined
     this.mirrorURL = mirrorURL;
   }
 
@@ -36,16 +36,27 @@ export default abstract class BaseDistribution {
       this.nodeInfo.versionSpec = evaluatedVersion;
     }
 
-    let toolPath = this.findVersionInHostedToolCacheDirectory();
-    if (toolPath) {
-      core.info(`Found in cache @ ${toolPath}`);
-    } else {
+    let toolPath: string;
+
+    // If mirrorURL is provided, skip the cache and directly download from the mirror
+    if (this.mirrorURL) {
+      core.info(`Using mirror URL: ${this.mirrorURL}`);
       const evaluatedVersion = await this.findVersionInDist(nodeJsVersions);
-      const toolName = this.getNodejsDistInfo(evaluatedVersion);
-      toolPath = await this.downloadNodejs(toolName);
+      const toolInfo = this.getNodejsDistInfo(evaluatedVersion);
+      toolPath = await this.downloadNodejsFromMirror(toolInfo);
+    } else {
+      // If no mirrorURL, use cache and fallback to the default behavior
+      toolPath = this.findVersionInHostedToolCacheDirectory();
+      if (toolPath) {
+        core.info(`Found in cache @ ${toolPath}`);
+      } else {
+        const evaluatedVersion = await this.findVersionInDist(nodeJsVersions);
+        const toolInfo = this.getNodejsDistInfo(evaluatedVersion);
+        toolPath = await this.downloadNodejs(toolInfo);
+      }
     }
 
-    if (this.osPlat != 'win32') {
+    if (this.osPlat !== 'win32') {
       toolPath = path.join(toolPath, 'bin');
     }
 
@@ -70,7 +81,7 @@ export default abstract class BaseDistribution {
   protected evaluateVersions(versions: string[]): string {
     let version = '';
 
-    const {range, options} = this.validRange(this.nodeInfo.versionSpec);
+    const { range, options } = this.validRange(this.nodeInfo.versionSpec);
 
     core.debug(`evaluating ${versions.length} versions`);
 
@@ -111,11 +122,11 @@ export default abstract class BaseDistribution {
     const osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
     version = semver.clean(version) || '';
     const fileName: string =
-      this.osPlat == 'win32'
+      this.osPlat === 'win32'
         ? `node-v${version}-win-${osArch}`
         : `node-v${version}-${this.osPlat}-${osArch}`;
     const urlFileName: string =
-      this.osPlat == 'win32'
+      this.osPlat === 'win32'
         ? this.nodeInfo.arch === 'arm64'
           ? `${fileName}.zip`
           : `${fileName}.7z`
@@ -129,6 +140,27 @@ export default abstract class BaseDistribution {
       arch: osArch,
       fileName: fileName
     };
+  }
+
+  protected async downloadNodejsFromMirror(info: INodeVersionInfo) {
+    let downloadPath = '';
+    const downloadUrl = `${this.mirrorURL}/v${info.resolvedVersion}/${info.fileName}`;
+    core.info(`Acquiring ${info.resolvedVersion} - ${info.arch} from mirror URL: ${downloadUrl}`);
+    
+    try {
+      downloadPath = await tc.downloadTool(downloadUrl);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+      throw new Error(`Failed to download Node.js from mirror URL: ${downloadUrl}, error: ${err.message}`);
+    } else {
+      // If the error is not an instance of Error, you may want to handle it differently
+      console.error('An unknown error occurred');
+    }
+  }
+    const toolPath = await this.extractArchive(downloadPath, info, true);
+    core.info('Done');
+
+    return toolPath;
   }
 
   protected async downloadNodejs(info: INodeVersionInfo) {
@@ -169,7 +201,7 @@ export default abstract class BaseDistribution {
     const c = semver.clean(versionSpec) || '';
     const valid = semver.valid(c) ?? versionSpec;
 
-    return {range: valid, options};
+    return { range: valid, options };
   }
 
   protected async acquireWindowsNodeFromFallbackLocation(
@@ -221,19 +253,11 @@ export default abstract class BaseDistribution {
     info: INodeVersionInfo | null,
     isOfficialArchive?: boolean
   ) {
-    //
-    // Extract
-    //
     core.info('Extracting ...');
     let extPath: string;
     info = info || ({} as INodeVersionInfo); // satisfy compiler, never null when reaches here
     if (this.osPlat == 'win32') {
       const extension = this.nodeInfo.arch === 'arm64' ? '.zip' : '.7z';
-      // Rename archive to add extension because after downloading
-      // archive does not contain extension type and it leads to some issues
-      // on Windows runners without PowerShell Core.
-      //
-      // For default PowerShell Windows it should contain extension type to unpack it.
       if (extension === '.zip' && isOfficialArchive) {
         const renamedArchive = `${downloadPath}.zip`;
         fs.renameSync(downloadPath, renamedArchive);
@@ -242,11 +266,7 @@ export default abstract class BaseDistribution {
         const _7zPath = path.join(__dirname, '../..', 'externals', '7zr.exe');
         extPath = await tc.extract7z(downloadPath, undefined, _7zPath);
       }
-      // 7z extracts to folder matching file name
-      const nestedPath = path.join(
-        extPath,
-        path.basename(info.fileName, extension)
-      );
+      const nestedPath = path.join(extPath, path.basename(info.fileName, extension));
       if (fs.existsSync(nestedPath)) {
         extPath = nestedPath;
       }
@@ -258,16 +278,8 @@ export default abstract class BaseDistribution {
       ]);
     }
 
-    //
-    // Install into the local tool cache - node extracts with a root folder that matches the fileName downloaded
-    //
     core.info('Adding to the cache ...');
-    const toolPath = await tc.cacheDir(
-      extPath,
-      'node',
-      info.resolvedVersion,
-      info.arch
-    );
+    const toolPath = await tc.cacheDir(extPath, 'node', info.resolvedVersion, info.arch);
 
     return toolPath;
   }
@@ -275,7 +287,6 @@ export default abstract class BaseDistribution {
   protected getDistFileName(): string {
     const osArch: string = this.translateArchToDistUrl(this.nodeInfo.arch);
 
-    // node offers a json list of versions
     let dataFileName: string;
     switch (this.osPlat) {
       case 'linux':
