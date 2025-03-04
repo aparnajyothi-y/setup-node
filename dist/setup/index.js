@@ -100127,12 +100127,18 @@ class BaseDistribution {
     findMirrorVersionInDist(nodeJsVersions) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!nodeJsVersions) {
+                // Fetch the available Node.js versions if not provided
                 nodeJsVersions = yield this.getNodeJsVersions();
+                console.log("Fetched Node.js versions:", nodeJsVersions);
             }
+            // Filter the versions
             const versions = this.filterVersions(nodeJsVersions);
+            console.log("Filtered Node.js versions:", versions);
+            // Evaluate and select the correct version
             const evaluatedVersion = this.evaluateVersions(versions);
+            console.log("Evaluated Node.js version:", evaluatedVersion);
             if (!evaluatedVersion) {
-                throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}.`);
+                throw new Error(`Unable to find Node version '${this.nodeInfo.versionSpec}' for platform ${this.osPlat} and architecture ${this.nodeInfo.arch}. Available versions: ${JSON.stringify(versions)}`);
             }
             return evaluatedVersion;
         });
