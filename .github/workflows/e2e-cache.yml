@@ -118,7 +118,7 @@ jobs:
         run: |
           echo "nodeLinker: node-modules" >> .yarnrc.yml
       - name: Generate yarn file
-        run: yarn install --ignore-engines
+        run: yarn install
       - name: Remove dependencies
         shell: pwsh
         run: Remove-Item node_modules -Force -Recurse
