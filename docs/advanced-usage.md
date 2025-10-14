@@ -298,12 +298,11 @@ steps:
 - run: npm ci
 - run: npm test
 ```
-
-Restore-Only Cache (Optional)
-
-> In some workflows, you may want to restore a cache without saving it. This can help:
+**Restore-Only Cache**
 
 ```yaml
+## In some workflows, you may want to restore a cache without saving it. This can help:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -322,23 +321,15 @@ jobs:
 
       # Setup Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
-          node-version: '18'
+          node-version: '24'
 
       # Install dependencies
       - run: npm install
 ```
 
-> **Notes**:
-
-> By only restoring the cache and not saving it, you prevent unnecessary writes during workflow runs.
-
-> This pattern is useful in any workflow, including main branches, feature branches, forks, or PRs.
-
-> actions/cache handles all restore/save logic and is the recommended solution for caching dependencies.
-
-> For more advanced caching scenarios, see Caching dependencies to speed up workflows. 
+> **Notes**: By only restoring the cache and not saving it, you prevent unnecessary writes during workflow runs.
 
 ## Multiple Operating Systems and Architectures
 
