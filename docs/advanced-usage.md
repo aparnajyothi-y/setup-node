@@ -307,11 +307,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Restore Node.js modules cache (restore-only)
       - name: Restore Node modules cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: cache-node-modules
         with:
           path: ~/.npm
@@ -329,7 +329,7 @@ jobs:
       - run: npm install
 ```
 
-> **Notes**: By only restoring the cache and not saving it, you prevent unnecessary writes during workflow runs.
+> **Note**: Using a restore-only cache avoids redundant writes to the cache, which can reduce workflow time and minimize cache storage usage.
 
 ## Multiple Operating Systems and Architectures
 
