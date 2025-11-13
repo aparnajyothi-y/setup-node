@@ -309,26 +309,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
       # Restore Node.js modules cache (restore-only)
       - name: Restore Node modules cache
-        uses: actions/cache@v4
-        id: cache-node-modules
+        uses: actions/cache/restore@v4
+        id: cache
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          path: path/to/dependencies
+          key: node-cache-${{ runner.os }}-${{ runner.arch }}-npm-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            node-cache-${{ runner.os }}-${{ runner.arch }}-npm-
+
       # Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '24'
+
       # Install dependencies
       - run: npm install
 ```
 
-> For more details related to cache scenarios, please refer [Node – npm](https://github.com/actions/cache/blob/main/examples.md#node---npm).
-
+> > For more details related to cache scenarios, please refer [cache-restore](https://github.com/actions/cache/tree/main/restore.
 ## Multiple Operating Systems and Architectures
 
 ```yaml
