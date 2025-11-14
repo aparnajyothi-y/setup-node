@@ -310,15 +310,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # Restore Node.js modules cache (restore-only)
-      - name: Restore Node modules cache
+      # Restore dependency cache (restore-only)
+      - name: Restore dependency cache
         uses: actions/cache/restore@v4
         id: cache
         with:
-          path: path/to/dependencies
-          key: node-cache-${{ runner.os }}-${{ runner.arch }}-npm-${{ hashFiles('**/package-lock.json') }}
+          path: |
+            path/to/dependencies
+          key: node-cache-${{ runner.os }}-${{ runner.arch }}-PACKAGE_MANAGER-${{ hashFiles('**/LOCKFILE') }}
           restore-keys: |
-            node-cache-${{ runner.os }}-${{ runner.arch }}-npm-
+            node-cache-${{ runner.os }}-${{ runner.arch }}-PACKAGE_MANAGER-
 
       # Setup Node.js
       - name: Setup Node.js
@@ -328,9 +329,8 @@ jobs:
 
       # Install dependencies
       - run: npm install
-```
 
-> > For more details related to cache scenarios, please refer [cache-restore](https://github.com/actions/cache/tree/main/restore.
+>  For more details related to cache scenarios, please refer [cache-restore](https://github.com/actions/cache/tree/main/restore.
 ## Multiple Operating Systems and Architectures
 
 ```yaml
