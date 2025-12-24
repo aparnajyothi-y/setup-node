@@ -325,28 +325,55 @@ steps:
 ## In some workflows, you may want to restore a cache without saving it. This can help reduce cache writes and storage usage in workflows that only need to read from cache
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
     steps:
-      - uses: actions/checkout@v5
-      # Restore Node.js modules cache (restore-only)
-      - name: Restore Node modules cache
-        uses: actions/cache@v4
-        id: cache-node-modules
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      # Setup Node.js
+      - uses: actions/checkout@v6
+
       - name: Setup Node.js
+        id: setup-node
         uses: actions/setup-node@v6
         with:
-          node-version: '24'
-      # Install dependencies
-      - run: npm install
+          node-version: '21'
+          package-manager-cache: false   # IMPORTANT
+
+      # Normalize arch
+      - name: Normalize runner architecture
+        shell: bash
+        run: |
+          echo "ARCH=$(echo '${{ runner.arch }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+      - name: Set Node cache path
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -e
+          echo "NODE_CACHE=$(npm config get cache)" >> $GITHUB_ENV
+      - name: Set Node cache path (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          "NODE_CACHE=$(npm config get cache)" | Out-File $env:GITHUB_ENV -Append
+      - name: Debug cache env
+        run: |
+          echo "ARCH=$ARCH"
+          echo "NODE_CACHE=$NODE_CACHE"
+      - name: Restore Node cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ env.NODE_CACHE }}
+          key: node-cache-${{ runner.os }}-${{ env.ARCH }}-npm-${{ hashFiles('**/package-lock.json', '**/npm-shrinkwrap.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build --if-present
 ```
 
-> For more details related to cache scenarios, please refer [Node – npm](https://github.com/actions/cache/blob/main/examples.md#node---npm).
+> For more details related to cache scenarios, please refer [actions/cache/restore ](https://github.com/actions/cache/tree/main/restore#only-restore-cache).
 
 ## Multiple Operating Systems and Architectures
 
