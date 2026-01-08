@@ -359,31 +359,13 @@ jobs:
         shell: bash
         run: |
           set -e
-          if [ -f pnpm-lock.yaml ]; then
-            PACKAGE_MANAGER=pnpm
-            CACHE_PATH=$(pnpm store path)
-            LOCK_PATTERN="**/pnpm-lock.yaml"
-          elif [ -f yarn.lock ]; then
-            PACKAGE_MANAGER=yarn
-            CACHE_PATH=$(yarn cache dir)
-            LOCK_PATTERN="**/yarn.lock"
-          else
-            PACKAGE_MANAGER=npm
-            CACHE_PATH=$(npm config get cache)
-            LOCK_PATTERN="**/package-lock.json"
-          fi
+          # UPDATE THESE VALUES FOR YOUR PROJECT:
+          PACKAGE_MANAGER="<package-manager>"              # Specify: npm, yarn, or pnpm
+          CACHE_PATH="$(<command-to-get-cache-path>)"      # npm: npm config get cache | yarn: yarn cache dir | pnpm: pnpm store path
+          LOCK_PATTERN="**/<lockfile-name>"                # npm: **/package-lock.json | yarn: **/yarn.lock | pnpm: **/pnpm-lock.yaml
           echo "PACKAGE_MANAGER=$PACKAGE_MANAGER" >> $GITHUB_ENV
           echo "NODE_CACHE=$CACHE_PATH" >> $GITHUB_ENV
           echo "LOCK_PATTERN=$LOCK_PATTERN" >> $GITHUB_ENV
-      # Debug resolved values
-      - name: Debug cache variables
-        shell: bash
-        run: |
-          echo "OS=${{ runner.os }}"
-          echo "ARCH=$ARCH"
-          echo "PACKAGE_MANAGER=$PACKAGE_MANAGER"
-          echo "NODE_CACHE=$NODE_CACHE"
-          echo "LOCK_PATTERN=$LOCK_PATTERN"
       # Restore dependency cache using a unified key format
       - name: Restore Node cache
         uses: actions/cache/restore@v5
@@ -394,30 +376,7 @@ jobs:
       # Install dependencies based on detected package manager
       - name: Install dependencies
         shell: bash
-        run: |
-          if [ "$PACKAGE_MANAGER" = "pnpm" ]; then
-            if pnpm install --frozen-lockfile; then
-              echo "pnpm frozen-lockfile install succeeded"
-            else
-              echo "pnpm lockfile incompatible — retrying without frozen-lockfile"
-              pnpm install --no-frozen-lockfile
-            fi
-          elif [ "$PACKAGE_MANAGER" = "yarn" ]; then
-            yarn install --frozen-lockfile
-          else
-            npm ci
-          fi
-      # Run build script if present
-      - name: Build
-        shell: bash
-        run: |
-          if [ "$PACKAGE_MANAGER" = "pnpm" ]; then
-            pnpm run build
-          elif [ "$PACKAGE_MANAGER" = "yarn" ]; then
-            yarn build
-          else
-            npm run build --if-present
-          fi
+        run: <install-command>    # npm: npm ci | yarn: yarn install --frozen-lockfile | pnpm: pnpm install --frozen-lockfile
 ```
 
 > For more details related to cache scenarios, please refer [actions/cache/restore ](https://github.com/actions/cache/tree/main/restore#only-restore-cache).
