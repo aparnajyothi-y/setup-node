@@ -334,26 +334,28 @@ jobs:
     steps:
       # Checkout repository
       - uses: actions/checkout@v6
-
       # Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '21'
-
       # Setup pnpm only when pnpm-lock.yaml exists
       - name: Setup pnpm
-        if: hashFiles('pnpm-lock.yaml') != ''
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-          run_install: false
-
-      # Normalize runner architecture (x64 / arm64)
-      - name: Normalize runner architecture
-        shell: bash
-        run: |
-          echo "ARCH=$(echo '${{ runner.arch }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+       # NOTE:
+       #Please add the pnpm setup job here
+      # pnpm should already be enabled for the project if the workflow use pnpm is the package manager, and dependencies
+      # are restored from the pnpm store cache (read-only).
+      # The cache key is derived from pnpm-lock.yaml.
+     - name: Normalize runner architecture (Linux/macOS)
+       if: runner.os != 'Windows'
+       shell: bash
+       run: echo "ARCH=$(echo '${{ runner.arch }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+     - name: Normalize runner architecture (Windows)
+       if: runner.os == 'Windows'
+       shell: pwsh
+       run: |
+          $arch = "${{ runner.arch }}".ToLower()
+          echo "ARCH=$arch" | Out-File $env:GITHUB_ENV -Append
       # Detect package manager and its cache path
       - name: Detect package manager and cache path
         shell: bash
@@ -372,7 +374,6 @@ jobs:
         with:
           path: ${{ env.NODE_CACHE }}
           key: node-cache-${{ runner.os }}-${{ env.ARCH }}-${{ env.PACKAGE_MANAGER }}-${{ hashFiles(env.LOCK_PATTERN) }}
-
       # Install dependencies based on detected package manager
       - name: Install dependencies
         shell: bash
