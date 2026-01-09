@@ -340,12 +340,11 @@ jobs:
         with:
           node-version: '21'
       # Setup pnpm only when pnpm-lock.yaml exists
-      - name: Setup pnpm
-       # NOTE:
-       #Please add the pnpm setup job here
-      # pnpm should already be enabled for the project if the workflow use pnpm is the package manager, and dependencies
-      # are restored from the pnpm store cache (read-only).
-      # The cache key is derived from pnpm-lock.yaml.
+        # Optional: Uncomment if using pnpm
+        # - name: Setup pnpm
+        #   uses: pnpm/action-setup@v4
+        #   with:
+        #     version: 10
      - name: Normalize runner architecture (Linux/macOS)
        if: runner.os != 'Windows'
        shell: bash
