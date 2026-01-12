@@ -339,12 +339,11 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '21'
-      # Setup pnpm only when pnpm-lock.yaml exists
-        # Optional: Uncomment if using pnpm
-        # - name: Setup pnpm
-        #   uses: pnpm/action-setup@v4
-        #   with:
-        #     version: 10
+      # Optional: Uncomment if using pnpm
+      # - name: Setup pnpm
+      #   uses: pnpm/action-setup@v4
+      #   with:
+      #    version: 10 
      - name: Normalize runner architecture (Linux/macOS)
        if: runner.os != 'Windows'
        shell: bash
