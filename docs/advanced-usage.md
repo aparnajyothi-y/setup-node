@@ -325,28 +325,60 @@ steps:
 ## In some workflows, you may want to restore a cache without saving it. This can help reduce cache writes and storage usage in workflows that only need to read from cache
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
     steps:
-      - uses: actions/checkout@v5
-      # Restore Node.js modules cache (restore-only)
-      - name: Restore Node modules cache
-        uses: actions/cache@v4
-        id: cache-node-modules
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+      # Checkout repository
+      - uses: actions/checkout@v6
       # Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '24'
-      # Install dependencies
-      - run: npm install
+          node-version: '21'
+      # Optional: Uncomment if using pnpm
+      # - name: Setup pnpm
+      #   uses: pnpm/action-setup@v4
+      #   with:
+      #    version: 10 
+     - name: Normalize runner architecture (Linux/macOS)
+       if: runner.os != 'Windows'
+       shell: bash
+       run: echo "ARCH=$(echo '${{ runner.arch }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+     - name: Normalize runner architecture (Windows)
+       if: runner.os == 'Windows'
+       shell: pwsh
+       run: |
+          $arch = "${{ runner.arch }}".ToLower()
+          echo "ARCH=$arch" | Out-File $env:GITHUB_ENV -Append
+      # Detect package manager and its cache path
+      - name: Detect package manager and cache path
+        shell: bash
+        run: |
+          set -e
+          # UPDATE THESE VALUES FOR YOUR PROJECT:
+          PACKAGE_MANAGER="<package-manager>"              # Specify: npm, yarn, or pnpm
+          CACHE_PATH="$(<command-to-get-cache-path>)"      # npm: npm config get cache | yarn: yarn cache dir | pnpm: pnpm store path
+          LOCK_PATTERN="**/<lockfile-name>"                # npm: **/package-lock.json | yarn: **/yarn.lock | pnpm: **/pnpm-lock.yaml
+          echo "PACKAGE_MANAGER=$PACKAGE_MANAGER" >> $GITHUB_ENV
+          echo "NODE_CACHE=$CACHE_PATH" >> $GITHUB_ENV
+          echo "LOCK_PATTERN=$LOCK_PATTERN" >> $GITHUB_ENV
+      # Restore dependency cache using a unified key format
+      - name: Restore Node cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ env.NODE_CACHE }}
+          key: node-cache-${{ runner.os }}-${{ env.ARCH }}-${{ env.PACKAGE_MANAGER }}-${{ hashFiles(env.LOCK_PATTERN) }}
+      # Install dependencies based on detected package manager
+      - name: Install dependencies
+        shell: bash
+        run: <install-command>    # npm: npm ci | yarn: yarn install --frozen-lockfile | pnpm: pnpm install --frozen-lockfile
 ```
 
-> For more details related to cache scenarios, please refer [Node – npm](https://github.com/actions/cache/blob/main/examples.md#node---npm).
+> For more details related to cache scenarios, please refer [actions/cache/restore ](https://github.com/actions/cache/tree/main/restore#only-restore-cache).
 
 ## Multiple Operating Systems and Architectures
 
